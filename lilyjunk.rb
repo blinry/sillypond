@@ -11,21 +11,48 @@ class String
 end
 
 def pitchname
-    %w(a b c d e f g).sample
+    raw = %w(a b c d e f g).sample
+    if rand > 0.05
+        raw
+    else
+        accidental = %w(is es).sample
+        raw+accidental
+    end
 end
 
 def minmaj
     %w(minor major).sample
 end
 
+def absolute_pitch
+    octave = %w(' '').sample
+    reminder = if rand > 0.05
+                   ""
+               else
+                   %w(! ?).sample
+               end
+    return pitchname+octave+reminder
+end
+
 def pitch
-    octaves = %w(' ,) << ""
-    return pitchname
-    pitchname+octaves.sample
+    reminder = if rand > 0.05
+                   ""
+               else
+                   %w(! ?).sample
+               end
+    pitchname+reminder
+end
+
+def absolute_pitch_or_rest
+    if rand > 0.1
+        absolute_pitch
+    else
+        "r"
+    end
 end
 
 def pitch_or_rest
-    if rand > 0.05
+    if rand > 0.1
         pitch
     else
         "r"
@@ -33,7 +60,7 @@ def pitch_or_rest
 end
 
 def maybe_absolute
-    if rand > 0.8
+    if rand > 0.9
         "\\absolute "
     else
         ""
@@ -77,14 +104,22 @@ def maybeslur
 end
 
 def note
-    maybe_absolute+pitch_or_rest+duration+articulation+maybeslur+maybetie+noteappend
+    if rand > 0.5
+        "\\absolute "+absolute_pitch_or_rest
+    else
+        pitch_or_rest
+    end + duration+articulation+maybeslur+maybetie+noteappend
 end
 
 def object
     if rand > 0.3
-        %w(a the your).sample+" "+%w(choir bow piano tuba tuna drum uke bell nose shoulder lemon kraken cow cat dog).sample
+        %w(a the your).sample+" "+%w(choir bow piano tuba tuna cello violin drum uke bell gong nose lemon kraken cow cat dog conductor thigh head elbow).sample
     else
-        %w(peanuts spaghetti audience).sample
+        (%w(peanuts spaghetti audience your) + [
+            "the white keys",
+            "the black keys",
+            "the person next to you",
+        ]).sample
     end
 end
 
@@ -104,7 +139,7 @@ def instruction_addendum
 end
 
 def active_verb
-    (%w(fix oil shake tap remove add sell burn tune admire destroy eat pet swallow release)+[
+    (%w(fix oil shake tap remove add sell burn tune admire destroy eat pet slap swallow release)+[
         "bring in",
         "continue on",
     ]).sample
@@ -122,6 +157,9 @@ def passive_verb
         "sit down",
         "shut up",
         "meditate",
+        "close your eyes",
+        "open your eyes",
+        "become agitated",
     ]).sample
 end
 
@@ -130,9 +168,12 @@ def when?
         "",
         "here",
         "now",
+        "...now!",
+        "... now ... and ... now!!",
         "immediately",
         "during this part",
         "a few times",
+        "for a minute",
         "for a while",
         "for two bars",
     ].sample
@@ -151,13 +192,26 @@ def exclamation
         "good luck",
         "huh",
         "what.",
+        "heh",
+        "help",
         "um...",
+        "go to bar #{rand(1..20)}"
     ].sample
+end
+
+def iff
+    ["if", "in case", "assuming"].sample + " " + [
+        "#{object} is present",
+        "there is #{object}",
+        "nothing is on fire",
+        "you have #{object}"
+    ].sample + ", "
 end
 
 def instruction
     commands = [
         "#{active_verb} #{object}",
+        "#{iff} #{active_verb} #{object}",
         "#{active_verb} #{object} #{when?}",
         "#{passive_verb} #{when?}",
         "#{adjective}",
@@ -192,26 +246,28 @@ def noteappend
 end
 
 def chord
-    maybe_absolute+"<" + (1..rand(2..10)).map{pitch}.join(" ")+ ">"
+    maybe_absolute+"<" + (1..rand(2..3)).map{pitch}.join(" ")+ ">"
 end
 
 def marktext
     tempo = [
          "Alligator",
          "Pesto",
+         "Rigatoni",
          "Gravel",
          "Lamborghini",
          "Arghissimo",
          "Aldente",
-         "Con moth",
          "Molten",
          "Mold",
-         "Lentils",
+         "Tutti",
+         "Solo",
     ].sample
     if rand > 0.2
         [
          "As #{adjective} as possible",
          "With #{object}",
+         "Like #{object}",
          tempo
         ].sample
     else
@@ -235,6 +291,10 @@ def clefsig
     "\\clef \"#{clef}\""
 end
 
+def keysig
+    "\\key #{pitchname} \\#{minmaj} "
+end
+
 def bar
     "\\bar \"#{%w(| . |. .| || .. |.| ; ! .|: :..: :|.|: :|.: :.|.: [|: :|][|: :|] :|. ' k S [ ]).sample}\""
 end
@@ -243,8 +303,11 @@ def special_thing
     [
         timesig,
         clefsig,
+        keysig,
         bar,
-        mark
+        mark,
+        "\\autoBeamOff",
+        "\\autoBeamOn",
     ].sample
 end
 
@@ -262,6 +325,7 @@ def thing
 end
 
 def clef
+    return "G"
     %w(bass tenor alto treble french soprano GG percussion).sample
 end
 
@@ -270,11 +334,11 @@ def time
 end
 
 def adjective
-    (%w(careful reckless silly serious playful light airy heavy grumpy fast quick slow sleepy evil strong weak determined convincing attentive)).sample
+    (%w(careful reckless silly serious playful light airy heavy grumpy fast quick slow sleepy evil strong deliberately weak determined convincing attentive)).sample
 end
 
 def modifier
-   %w(death fairie's last evil wicked solo violin church string).sample
+   %w(death fairie's last evil wicked solo violin church cello valve string infamous vicious maleficent final ultimate).sample
 end
 
 def titlepart
@@ -284,19 +348,24 @@ def titlepart
               ""
           end
 
-    type = (%w(symphonie waltz march prelude quartet aire ballet opera canon song sonata concerto trio) + [
+    type = (%w(symphony waltz march prelude quartet aire ballet opera canon song sonata concerto trio duet suite requiem dance) + [
         "string quartet",
     ]).sample
     "#{modifier} #{type}"
 end
 
 def title
-    [
+    result = [
         titlepart+" in "+pitchname+" "+minmaj,
         titlepart+" No. #{rand(1..20)}",
         titlepart+" for #{object}",
         titlepart+" and "+titlepart
-    ].sample.titlecase
+    ].sample
+
+    if rand > 0.9
+        result << [", Op. #{rand(1..150)}"].sample
+    end
+    result.titlecase
 end
 
 puts <<HERE
@@ -315,15 +384,24 @@ HERE
 
 puts "\\score {"
 
-    puts "\\relative c'' {"
+    puts "\\new Voice \\with {
+        \\remove \"Note_heads_engraver\"
+        \\consists \"Completion_heads_engraver\"
+        \\remove \"Rest_engraver\"
+        \\consists \"Completion_rest_engraver\"
+     }"
 
-        puts "\\autoBeamOff "
+    puts "\\relative c''
+    {"
+
+        #puts "\\autoBeamOff "
 
         puts clefsig
+        puts keysig
         puts timesig
         print mark
 
-        300.times do
+        200.times do
             print "#{thing} "
         end
         print "\\bar \"|.\""
