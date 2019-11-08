@@ -1,17 +1,19 @@
-#require "active_support/inflector"
 require "linguistics"
 
-Linguistics.use(:en)#, monkeypatch: true)
+Linguistics.use(:en)
 
 class String
+    def cap
+        self[0].capitalize+self[1..-1]
+    end
     def titlecase
-        capitalize.split(" ").map { |word|
+        cap.split(" ").map { |word|
             if %w(for the and a in of).include?(word)
                 word
             else
-                word.capitalize
+                word.cap
             end
-        }.join(" ").gsub("a Major", "A Major")
+        }.join(" ").gsub("a Major", "A Major").gsub("a Minor", "A Minor")
     end
 
     def s
@@ -144,7 +146,7 @@ def note
 end
 
 def rawobject
-    (%w(choir bow piano tuba tuna cello violin drum sax timpani uke bell gong nose lemon kraken cow otter frog cat dog penguin conductor thigh head elbow bicycle horn trombone trumpet bass flute vibraphone cymbal triangle otamatone cucumber tomato theremin organ) + [
+    (%w(choir bow piano tuba tuna cello violin drum sax timpani uke bell gong nose lemon kraken cow otter frog cat dog nutcracker penguin conductor thigh head elbow hand foot bicycle horn trombone trumpet bass flute vibraphone cymbal triangle otamatone cucumber tomato theremin organ) + [
         "tiny snek",
         "white key",
         "black key",
@@ -241,6 +243,7 @@ def passive_verb
         "go to bar #{rand(1..20)}",
         "focus",
         "confess",
+        "start praying",
     ]).sample
 end
 
@@ -260,39 +263,36 @@ def when?
     ].sample
 end
 
-def exclamation
-    [
-        "all hope is lost",
-        "why me?",
-        "oh no",
-        "have a nice day",
-        "what is this",
-        "this part is impossible",
-        "this is fine",
-        "how?",
-        "good luck",
-        "huh",
-        "what.",
-        "heh",
-        "help",
-        "um...",
-        "skip this",
-        "this was a mistake",
-        "don't read this",
-    ].sample
-end
-
 def instruction
     text = if rand > 0.5
            [
                "#{active_verb} #{object}",
                "#{active_verb} #{object} #{when?}",
                "#{passive_verb} #{when?}",
+               "#{passive_verb}",
                "#{adjective}",
                "#{adjective} and #{adjective}",
            ].sample
            else
                [
+                   "all hope is lost",
+                   "why me?",
+                   "oh no",
+                   "you shall not pass",
+                   "have a nice day",
+                   "what is this",
+                   "this part is impossible",
+                   "this is fine",
+                   "how?",
+                   "good luck",
+                   "huh",
+                   "what.",
+                   "heh",
+                   "help",
+                   "um...",
+                   "skip this",
+                   "this was a mistake",
+                   "don't read this",
                    "keep both feet together",
                    "insert peanuts",
                    "cool #{object} with small fan",
@@ -324,7 +324,7 @@ def instruction
                    "theme",
                    "bend bow to desired shape",
                    "as last time",
-                   "procedure as last year",
+                   "same procedure as last year",
                    "slowly increase drooling",
                    "this is too easy",
                    "like #{rawobject.a}",
@@ -347,7 +347,7 @@ def instruction
     if r > 0.95
         text.upcase
     elsif r > 0.7
-        text.capitalize
+        text.cap
     elsif r > 0.65
         text + "!"
     else
@@ -426,7 +426,7 @@ def marktext
          tempo
         ].sample
     else
-        instruction.capitalize
+        instruction.cap
     end
 end
 
@@ -521,28 +521,40 @@ def adjective
 end
 
 def modifier
-   %w(death fairie's last evil wicked solo violin church cello valve string infamous vicious maleficent final ultimate).sample
+   %w(death fairie's last evil wicked solo violin church cello valve string infamous vicious maleficent final ultimate easy simple beginner's).sample
+end
+
+def type
+    %w(symphony waltz march prélude quartet aria ballet opera canon song sonata concerto trio duet suite requiem dance fugue cantata variations toccata ballade étude intermezzo motet oratorio anthem serenade).sample
 end
 
 def titlepart
-    mod = if rand > 0.5
+    mod = if rand > 0.3
               modifier
+          elsif
+              rawobject
           else
               ""
           end
 
-    type = (%w(symphony waltz march prelude quartet aire ballet opera canon song sonata concerto trio duet suite requiem dance) + [
-        "string quartet",
-    ]).sample
     "#{modifier} #{type}"
 end
 
 def title
     result = [
+        type+" in "+pitchname+" "+minmaj,
         titlepart+" in "+pitchname+" "+minmaj,
         titlepart+" No. #{rand(1..20)}",
         titlepart+" for #{object}",
-        titlepart+" and "+titlepart
+        titlepart+" and "+titlepart,
+        [
+            "The Well-Tempered #{rawobject}",
+            "Ave #{rawobject}",
+            "#{rawobject} #{type}",
+            "The #{rawobject} #{type}",
+            "On the beautiful blue #{rawobject}",
+            "The four #{objects}",
+        ].sample
     ].sample
 
     if rand > 0.9
@@ -608,7 +620,7 @@ puts <<HERE
 \\header {
     tagline = ##f
     title = "#{title}"
-    subtitle = "#{subtitle}"
+    #{rand > 0.3 ? "subtitle = \"#{subtitle}\"" : ""}
     arranger = "Arranged by #{arranger.titlecase}"
 }
 
