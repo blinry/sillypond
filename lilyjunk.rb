@@ -68,7 +68,8 @@ def maybe_absolute
 end
 
 def duration
-    d = %w(2 4 4 4 4 8 8 8 8 16 16 16 16 32 32 32 32).sample
+    #d = %w(2 4 4 4 4 8 8 8 8 16 16 16 16 32 32 32 32).sample
+    d = %w(2 4 4 8 8 8 8 16 16 32 32).sample
     if rand > 0.9
         d+"."
     else
@@ -79,6 +80,15 @@ end
 def maybetie
     if rand > 0.5
         "~"
+    else
+        ""
+    end
+end
+
+# segfaults?
+def maybebend
+    if rand > 0.95
+        "\\bendAfter ##{rand(-1.0..1.0)} "
     else
         ""
     end
@@ -103,12 +113,21 @@ def maybeslur
     end
 end
 
+def maybeinvbar
+    if rand > 0.8
+        #"\\bar \"\""
+        bar
+    else
+        ""
+    end
+end
+
 def note
     if rand > 0.5
         "\\absolute "+absolute_pitch_or_rest
     else
         pitch_or_rest
-    end + duration+articulation+maybeslur+maybetie+noteappend
+    end + duration+articulation+maybeslur+maybetie+noteappend + maybeinvbar
 end
 
 def object
@@ -166,6 +185,7 @@ end
 def when?
     [
         "",
+        "or not",
         "here",
         "now",
         "...now!",
@@ -216,13 +236,76 @@ def instruction
         "#{passive_verb} #{when?}",
         "#{adjective}",
         "#{adjective} and #{adjective}",
-        exclamation
+        "keep both feet together",
+        "insert peanuts",
+        "cool timpani with small fan",
+        "deliberately",
+        "mute in",
+        "mute out",
+        "play ball",
+        "release the penguins",
+        "go fast",
+        "saxes move downstage",
+        "bongos tilt",
+        "light explosives",
+        "cresc",
+        "exclamation",
+        "duck",
+        "dim",
+        "turning flame slightly higher and higher",
+        "untie slip knot",
+        "add bicycle",
+        "begin to fall",
+        "bow real fast",
+        "all Harpists stand up and wait",
+        "spam",
+        "only 16 players",
+        "rests are imaginary",
+        "continue swimming motion",
+        "balance your chair on 2 legs",
+        "intonation!",
+        "drive it!",
+        "(spoken)",
+        "brightly",
+        "flutter tongue",
+        "guitar solo",
+        "pizz.",
+        "Sopranos only",
+        "left hand, softly",
+        "REFRAIN",
+        "THEME",
+        "a capella",
+        "repeat and fade",
+        "use yak-hair bows",
+        "bend bow to desired shape",
+        "at right angles to the frog",
+        "as last time",
+        "procedure as last year",
+        "slowly increase drooling",
+        "WAIT! I'M NOT READY!",
+        "hide the otter",
+        "this is too easy",
+        "like a circus bear",
+        "from the frog",
+        "slippery when wet",
+        "feel free to skip this",
+        "come on! faster!",
+        "inflate the circus clowns",
+        "the frog has left the building",
+        "whistle this part",
+        "glissando using tip of nose",
+        "like a polka",
+        "without the frog",
+        "with much passionfruit",
     ].sample
 end
 
 def articulation
-    if rand > 0.95
-        %w(\fermata \prall \turn \staccato \trill).sample
+    articulations = %w(accent espressivo marcato portato staccatissimo staccato tenuto prall mordent prallmordent turn upprall downprall upmordent downmordent lineprall prallprall pralldown prallup reverseturn trill shortfermata fermata longfermata verylongfermata upbow downbow flageolet snappizzicato open halfopen stopped lheel rheel ltoe rtoe segno coda varcoda)
+    if rand > 0.98
+        "\\"+articulations.sample+"\\"+articulations.sample
+    elsif rand > 0.9
+        "\\"+articulations.sample
     else
         ""
     end
@@ -236,17 +319,34 @@ end
 
 def noteappend
     dir = %w(^ _).sample
-    if rand > 0.8
+    r = rand
+    if r > 0.99
+        [
+            "\\startTrillSpan",
+        ].sample
+    elsif r > 0.7
         "#{dir}\\markup{#{format(instruction+instruction_addendum)}}"
-    elsif rand > 0.78
-        "\\"+%w(ppppp pppp ppp pp p mp mf f ff fff ffff fffff fp sf sff sp spp sfz rfz).sample
+    elsif rand > 0.4
+        [
+            "\\"+%w(ppppp pppp ppp pp p mp mf f ff fff ffff fffff fp sf sff sp spp sfz rfz).sample,
+            "\\glissando",
+            "\\stopTrillSpan",
+        ].sample
+    else
+        ""
+    end
+end
+
+def maybe_arpeggio
+    if rand > 0.9
+        "\\arpeggio"
     else
         ""
     end
 end
 
 def chord
-    maybe_absolute+"<" + (1..rand(2..3)).map{pitch}.join(" ")+ ">"
+    maybe_absolute+"<" + (1..rand(2..3)).map{pitch}.join(" ")+ ">"+maybe_arpeggio
 end
 
 def marktext
@@ -311,16 +411,28 @@ def special_thing
     ].sample
 end
 
+def notsospecialthing
+    [
+        "\\slur" + %w(Dashed Dotted Solid Solid Solid).sample,
+        #"\\set doubleSlurs = ###{%w(t f).sample}",
+        "\\override Glissando.style = #'#{%w(line dashed-line dotted-line zigzag trill).sample}",
+        "\\arpeggio" + %w(ArrowUp ArrowDown Normal Bracket Parenthesis ParenthesisDashed).sample,
+        "\\breathe",
+    ].sample
+end
+
 def thing
     r = rand
-    if r > 0.05
+    if r > 0.9
+        notsospecialthing
+    elsif r > 0.85
+        special_thing
+    else
         if rand > 0.2
             note
         else
             chord
         end
-    else
-        special_thing
     end
 end
 
@@ -330,7 +442,7 @@ def clef
 end
 
 def time
-    %w(4/4 2/2 3/4 8/8).sample
+    (%w(4/4 2/2 3/4 8/8 7/8) << "#{rand(1..8)}/#{rand(1..8)}").sample
 end
 
 def adjective
@@ -369,9 +481,9 @@ def title
 end
 
 puts <<HERE
-\\version \"2.18.2\"
-#(set! paper-alist (cons '("sticker" . (cons (* 200 mm) (* 50 mm))) paper-alist))
-#(set-default-paper-size "a4")
+\\version \"2.19.82\"
+%#(set! paper-alist (cons '("sticker" . (cons (* 200 mm) (* 50 mm))) paper-alist))
+%#(set-default-paper-size "a4")
 
 \\header {
     tagline = ""
@@ -380,19 +492,22 @@ puts <<HERE
 
 HERE
 
-    #composer = "R. Andom"
+   #composer = "R. Andom"
 
 puts "\\score {"
 
     puts "\\new Voice \\with {
-        \\remove \"Note_heads_engraver\"
-        \\consists \"Completion_heads_engraver\"
-        \\remove \"Rest_engraver\"
-        \\consists \"Completion_rest_engraver\"
+        %\\remove \"Note_heads_engraver\"
+        %\\consists \"Completion_heads_engraver\"
+        %\\remove \"Rest_engraver\"
+        %\\consists \"Completion_rest_engraver\"
      }"
 
     puts "\\relative c''
     {"
+
+        #puts "\\override Glissando.after-line-breaking = ##t"
+        #puts "\\override Glissando.breakable = ##t"
 
         #puts "\\autoBeamOff "
 
@@ -416,6 +531,16 @@ puts "\\score {"
     #puts "}"
 
     puts "\\midi { }"
-    puts "\\layout { }"
+    puts "\\layout {
+              %ragged-right = ##t
+              %\\context {
+                  %\\Score
+                  %\\override SpacingSpanner.base-shortest-duration = #(ly:make-moment 1/1)
+              %}
+        }"
 
 puts "}"
+
+#20.times do
+#    puts "  "+instruction
+#end
