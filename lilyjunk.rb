@@ -1,12 +1,25 @@
+#require "active_support/inflector"
+require "linguistics"
+
+Linguistics.use(:en)#, monkeypatch: true)
+
 class String
     def titlecase
-        split(" ").map { |word|
+        capitalize.split(" ").map { |word|
             if %w(for the and a in of).include?(word)
                 word
             else
                 word.capitalize
             end
-        }.join(" ")
+        }.join(" ").gsub("a Major", "A Major")
+    end
+
+    def s
+        self.en.plural
+    end
+
+    def a
+        self.en.a
     end
 end
 
@@ -97,13 +110,13 @@ end
 def maybeslur
     r = rand
     if r > 0.4
-        if rand > 0.5
+        if rand > 0.8
             "("
         else
             ")"
         end
     elsif r > 0.35
-        if rand > 0.5
+        if rand > 0.8
             "\\<"
         else
             "\\>"
@@ -130,16 +143,43 @@ def note
     end + duration+articulation+maybeslur+maybetie+noteappend + maybeinvbar
 end
 
+def rawobject
+    (%w(choir bow piano tuba tuna cello violin drum sax timpani uke bell gong nose lemon kraken cow otter frog cat dog penguin conductor thigh head elbow bicycle horn trombone trumpet bass flute vibraphone cymbal triangle otamatone cucumber tomato theremin organ) + [
+        "tiny snek",
+        "white key",
+        "black key",
+        "peanut",
+        "circus clown",
+        "circus bear",
+        "1st violin",
+        "2nd violin",
+        "snare drum",
+        "english horn",
+        "music stand",
+        "forest spirit",
+    ]).sample
+end
+
 def object
-    if rand > 0.3
-        %w(a the your).sample+" "+%w(choir bow piano tuba tuna cello violin drum uke bell gong nose lemon kraken cow cat dog conductor thigh head elbow).sample
+    if rand > 0.05
+        o = rawobject
+        [
+            "#{o}",
+            "the #{o}",
+            "your #{o}",
+            "#{o.a}",
+            "#{o.s}",
+            "some #{o.s}",
+        ].sample
     else
-        (%w(peanuts spaghetti audience your) + [
-            "the white keys",
-            "the black keys",
+        (%w(peanuts spaghetti audience) + [
             "the person next to you",
         ]).sample
     end
+end
+
+def objects
+    rawobject.s
 end
 
 def instruction_addendum
@@ -158,7 +198,7 @@ def instruction_addendum
 end
 
 def active_verb
-    (%w(fix oil shake tap remove add sell burn tune admire destroy eat pet slap swallow release)+[
+    (%w(fix oil shake tap remove add sell burn tune admire destroy eat pet slap swallow release hide inflate deflate)+[
         "bring in",
         "continue on",
     ]).sample
@@ -179,20 +219,41 @@ def passive_verb
         "close your eyes",
         "open your eyes",
         "become agitated",
+        "mute in",
+        "mute out",
+        "play ball",
+        "duck",
+        "untie slip knot",
+        "begin to fall",
+        "bow real fast",
+        "drop your instrument",
+        "spam",
+        "continue swimming motion",
+        "balance your chair on 2 legs",
+        "a capella",
+        "repeat",
+        "fade",
+        "use yak-hair bows",
+        "whistle",
+        "drive it",
+        "flutter tongue",
+        "go fast",
+        "go to bar #{rand(1..20)}",
+        "focus",
+        "confess",
     ]).sample
 end
 
 def when?
     [
         "",
-        "or not",
+        "- or don't",
         "here",
         "now",
         "...now!",
         "... now ... and ... now!!",
         "immediately",
         "during this part",
-        "a few times",
         "for a minute",
         "for a while",
         "for two bars",
@@ -215,89 +276,83 @@ def exclamation
         "heh",
         "help",
         "um...",
-        "go to bar #{rand(1..20)}"
+        "skip this",
+        "this was a mistake",
+        "don't read this",
     ].sample
-end
-
-def iff
-    ["if", "in case", "assuming"].sample + " " + [
-        "#{object} is present",
-        "there is #{object}",
-        "nothing is on fire",
-        "you have #{object}"
-    ].sample + ", "
 end
 
 def instruction
-    commands = [
-        "#{active_verb} #{object}",
-        "#{iff} #{active_verb} #{object}",
-        "#{active_verb} #{object} #{when?}",
-        "#{passive_verb} #{when?}",
-        "#{adjective}",
-        "#{adjective} and #{adjective}",
-        "keep both feet together",
-        "insert peanuts",
-        "cool timpani with small fan",
-        "deliberately",
-        "mute in",
-        "mute out",
-        "play ball",
-        "release the penguins",
-        "go fast",
-        "saxes move downstage",
-        "bongos tilt",
-        "light explosives",
-        "cresc",
-        "exclamation",
-        "duck",
-        "dim",
-        "turning flame slightly higher and higher",
-        "untie slip knot",
-        "add bicycle",
-        "begin to fall",
-        "bow real fast",
-        "all Harpists stand up and wait",
-        "spam",
-        "only 16 players",
-        "rests are imaginary",
-        "continue swimming motion",
-        "balance your chair on 2 legs",
-        "intonation!",
-        "drive it!",
-        "(spoken)",
-        "brightly",
-        "flutter tongue",
-        "guitar solo",
-        "pizz.",
-        "Sopranos only",
-        "left hand, softly",
-        "REFRAIN",
-        "THEME",
-        "a capella",
-        "repeat and fade",
-        "use yak-hair bows",
-        "bend bow to desired shape",
-        "at right angles to the frog",
-        "as last time",
-        "procedure as last year",
-        "slowly increase drooling",
-        "WAIT! I'M NOT READY!",
-        "hide the otter",
-        "this is too easy",
-        "like a circus bear",
-        "from the frog",
-        "slippery when wet",
-        "feel free to skip this",
-        "come on! faster!",
-        "inflate the circus clowns",
-        "the frog has left the building",
-        "whistle this part",
-        "glissando using tip of nose",
-        "like a polka",
-        "without the frog",
-        "with much passionfruit",
-    ].sample
+    text = if rand > 0.5
+           [
+               "#{active_verb} #{object}",
+               "#{active_verb} #{object} #{when?}",
+               "#{passive_verb} #{when?}",
+               "#{adjective}",
+               "#{adjective} and #{adjective}",
+           ].sample
+           else
+               [
+                   "keep both feet together",
+                   "insert peanuts",
+                   "cool #{object} with small fan",
+                   "#{objects} move downstage",
+                   "#{objects} tilt",
+                   "light explosives",
+                   "cresc.",
+                   "dolce",
+                   "tranqu.",
+                   "con amabilità",
+                   "staccato",
+                   "non staccato",
+                   "turning flame slightly higher and higher",
+                   "all harpists stand up and wait",
+                   "only #{rand(2..16)} players",
+                   "rests are imaginary",
+                   "(spoken)",
+                   "brightly",
+                   "guitar solo",
+                   "pizza.",
+                   "rit.",
+                   "poco a poco",
+                   "D.C. al Fine",
+                   "scherz.",
+                   "molto",
+                   "Sopranos only",
+                   "left hand, softly",
+                   "refrain",
+                   "theme",
+                   "bend bow to desired shape",
+                   "as last time",
+                   "procedure as last year",
+                   "slowly increase drooling",
+                   "this is too easy",
+                   "like #{rawobject.a}",
+                   "from #{object}",
+                   "through #{object}",
+                   "with #{object}",
+                   "without #{object}",
+                   "together with #{object}",
+                   "slippery when wet",
+                   "feel free to skip this",
+                   "come on! faster!",
+                   "#{object} has left the building",
+                   "glissando using #{object}",
+                   "like a polka",
+                   "help, I'm trapped in a music factory",
+               ].sample
+           end + instruction_addendum
+
+    r = rand
+    if r > 0.95
+        text.upcase
+    elsif r > 0.7
+        text.capitalize
+    elsif r > 0.65
+        text + "!"
+    else
+        text
+    end
 end
 
 def articulation
@@ -320,12 +375,14 @@ end
 def noteappend
     dir = %w(^ _).sample
     r = rand
-    if r > 0.99
+    if r > 0.97
         [
             "\\startTrillSpan",
+            "\\sustainOn",
+            "\\sustainOff",
         ].sample
     elsif r > 0.7
-        "#{dir}\\markup{#{format(instruction+instruction_addendum)}}"
+        "#{dir}\\markup{#{format(instruction)}}"
     elsif rand > 0.4
         [
             "\\"+%w(ppppp pppp ppp pp p mp mf f ff fff ffff fffff fp sf sff sp spp sfz rfz).sample,
@@ -346,7 +403,7 @@ def maybe_arpeggio
 end
 
 def chord
-    maybe_absolute+"<" + (1..rand(2..3)).map{pitch}.join(" ")+ ">"+maybe_arpeggio
+    maybe_absolute+"<" + (1..rand(2..10)).map{pitch}.join(" ")+ ">"+maybe_arpeggio
 end
 
 def marktext
@@ -354,12 +411,10 @@ def marktext
          "Alligator",
          "Pesto",
          "Rigatoni",
-         "Gravel",
          "Lamborghini",
          "Arghissimo",
          "Aldente",
          "Molten",
-         "Mold",
          "Tutti",
          "Solo",
     ].sample
@@ -367,7 +422,7 @@ def marktext
         [
          "As #{adjective} as possible",
          "With #{object}",
-         "Like #{object}",
+         "Like #{rawobject.a}",
          tempo
         ].sample
     else
@@ -376,10 +431,13 @@ def marktext
 end
 
 def mark
-    "\\mark " + if rand > 0.1
+    r = rand
+    "\\mark " + if r > 0.6
         "\"#{marktext}\" "
-    else
+    elsif r > 0.2
         "\\default"
+    else
+        "\\markup { \\musicglyph \"scripts.#{%w(segno coda ufermata).sample}\" }"
     end + " "
 end
 
@@ -405,9 +463,14 @@ def special_thing
         clefsig,
         keysig,
         bar,
-        mark,
         "\\autoBeamOff",
-        "\\autoBeamOn",
+        #"\\stopStaff",
+        "    \\new Staff \\with {
+          \\remove \"Time_signature_engraver\"
+          alignAboveContext = #\"main\"
+          \\magnifyStaff #2/3
+          firstClef = ##f
+        } \\relative { #{clefsig} #{pitch}^\\markup{\\large{#{marktext}}} #{(1..rand(5..20)).map{thing}.join(" ")} \\stopStaff }"
     ].sample
 end
 
@@ -417,15 +480,24 @@ def notsospecialthing
         #"\\set doubleSlurs = ###{%w(t f).sample}",
         "\\override Glissando.style = #'#{%w(line dashed-line dotted-line zigzag trill).sample}",
         "\\arpeggio" + %w(ArrowUp ArrowDown Normal Bracket Parenthesis ParenthesisDashed).sample,
+        "\\set Score.markFormatter = #format-mark-#{["", "box-", "circle-"].sample}alphabet",
         "\\breathe",
+        "\\autoBeamOn",
+        #"\\startStaff",
+        #"\\startStaff",
+        #"\\startStaff",
+        #"\\startStaff",
+        #"\\startStaff",
+        #"\\startStaff",
+        mark,
     ].sample
 end
 
 def thing
     r = rand
-    if r > 0.9
+    if r > 0.85
         notsospecialthing
-    elsif r > 0.85
+    elsif r > 0.8
         special_thing
     else
         if rand > 0.2
@@ -437,8 +509,7 @@ def thing
 end
 
 def clef
-    return "G"
-    %w(bass tenor alto treble french soprano GG percussion).sample
+    %w(mensural-g kievan-do percussion tab bass tenor tenorG alto treble french soprano C tenor varC GG).sample
 end
 
 def time
@@ -480,65 +551,132 @@ def title
     result.titlecase
 end
 
+def fromtitle
+    [
+        "#{object} and #{object}",
+        "#{object}",
+        "#{instruction}",
+    ].sample.titlecase
+end
+
+def subtitle
+    [
+        "For #{rand(2..5)} #{objects} and #{rawobject.a}",
+        "For #{rand(2..5)} #{objects}",
+        "For #{rawobject.a}, #{rawobject.a}, and #{rawobject.a}",
+        "(from “#{fromtitle}”)"
+    ].sample
+end
+
+def arranger
+    if rand > 0.1
+        [
+            "accident",
+            "surprise",
+            "mistake",
+            "chance",
+            "all means",
+            "any means",
+            "experimentation",
+            "foot",
+            "luck",
+            "a long shot",
+            "weight",
+            "appointment",
+            "far",
+            "virtue",
+            "default",
+            "all appearances",
+            "brute force",
+            "force",
+            "no means",
+            "size and weight",
+            "nature",
+            "design",
+            "alphabetical order",
+        ].sample
+    else
+        object
+    end
+end
+
 puts <<HERE
 \\version \"2.19.82\"
 %#(set! paper-alist (cons '("sticker" . (cons (* 200 mm) (* 50 mm))) paper-alist))
 %#(set-default-paper-size "a4")
 
 \\header {
-    tagline = ""
+    tagline = ##f
     title = "#{title}"
+    subtitle = "#{subtitle}"
+    arranger = "Arranged by #{arranger.titlecase}"
 }
 
 HERE
 
    #composer = "R. Andom"
 
-puts "\\score {"
-
-    puts "\\new Voice \\with {
-        %\\remove \"Note_heads_engraver\"
-        %\\consists \"Completion_heads_engraver\"
-        %\\remove \"Rest_engraver\"
-        %\\consists \"Completion_rest_engraver\"
-     }"
-
-    puts "\\relative c''
-    {"
-
-        #puts "\\override Glissando.after-line-breaking = ##t"
-        #puts "\\override Glissando.breakable = ##t"
-
-        #puts "\\autoBeamOff "
-
-        puts clefsig
-        puts keysig
-        puts timesig
-        print mark
-
-        200.times do
-            print "#{thing} "
-        end
-        print "\\bar \"|.\""
-        puts
-
+puts "\\book {"
+    puts "\\paper {"
+        puts "oddFooterMarkup = \\markup { \\fill-line { \\line { Generated by @blinry for PROCJAM 2019 • CC0 1.0 • https://morr.cc/lilydump/ } } }"
     puts "}"
 
-    #puts "\\addlyrics {"
+    puts "\\score {"
 
-    #    puts "Lorem ip -- sum do -- lor sit a -- met, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
+        puts "\\new Staff \\with {
+            %\\remove \"Note_heads_engraver\"
+            %\\consists \"Completion_heads_engraver\"
+            %\\remove \"Rest_engraver\"
+            %\\consists \"Completion_rest_engraver\"
+         }"
 
-    #puts "}"
+        puts "\\relative c''
+        {"
 
-    puts "\\midi { }"
-    puts "\\layout {
-              %ragged-right = ##t
-              %\\context {
-                  %\\Score
-                  %\\override SpacingSpanner.base-shortest-duration = #(ly:make-moment 1/1)
-              %}
-        }"
+            #puts "\\override Glissando.after-line-breaking = ##t"
+            #puts "\\override Glissando.breakable = ##t"
 
+            #puts "\\autoBeamOff "
+
+            puts clefsig
+            puts keysig
+            puts timesig
+            print mark
+
+            200.times do
+                print "#{thing} "
+            end
+            print "\\bar \"|.\""
+            puts
+
+        puts "}"
+
+        #puts "\\addlyrics {"
+
+        #    puts "Lorem ip -- sum do -- lor sit a -- met, con -- se -- te -- tur a -- di -- pis -- cing e -- lit, sed di -- am no -- nu -- my eir -- mod tem -- por in -- vi -- dunt ut la -- bo -- re et do -- lo -- re ma -- gna a -- li -- quyam e -- rat, sed di -- am vo -- lup -- tu -- a. At ve -- ro e -- os et a -- ccu -- sam et jus -- to du -- o do -- lo -- res et ea re -- bum. Stet cli -- ta kasd gu -- ber -- gren, no se -- a ta -- ki -- ma -- ta sanc -- tus est."
+
+        #puts "}"
+
+    #    puts <<HERE
+    #    \\header {
+    #        piece = "Based on a cro-magnon skinning chant"
+    #    }
+    #HERE
+
+        puts "\\midi { }"
+        puts "\\layout {
+                  %ragged-right = ##t
+                  %\\context {
+                      %\\Score
+                      %\\override SpacingSpanner.base-shortest-duration = #(ly:make-moment 1/1)
+                  %}
+                  \\context {
+                      \\Staff
+                      \\RemoveEmptyStaves
+                  }
+            }"
+
+    puts "}"
 puts "}"
 
 #20.times do
