@@ -4,7 +4,7 @@ require "perlin"
 Linguistics.use(:en)
 
 # persistence 1, 3 octaves
-@gen = Perlin::Generator.new Time.now.to_i % 100, 5, 3
+@gen = Perlin::Generator.new (1+(Time.now.to_i % 100)), 2, 2
 @count = 1
 
 class String
@@ -142,7 +142,7 @@ def maybeinvbar
     if rand > 0.8
         bar
     else
-        ""
+        "\\bar \"\""
     end
 end
 
@@ -344,7 +344,7 @@ def instruction
                    "slippery when wet",
                    "feel free to skip this",
                    "come on! faster!",
-                   "#{object} has left the building",
+                   "#{rawobject} has left the building",
                    "glissando using #{object}",
                    "like a polka",
                    "help, I'm trapped in a music factory",
@@ -383,22 +383,25 @@ end
 def noteappend
     dir = %w(^ _).sample
     r = rand
-    if r > 0.97
+    if r > 0.995
+        [
+            "^\\markup{\\fret-diagram \"6-x;5-3;4-2;3-o;2-1;1-o;\"}",
+            "^\\markup{\\fret-diagram \"6-x;5-x;4-o;3-2;2-3;1-1;\"}",
+        ].sample
+    elsif r > 0.97
         [
             "\\startTrillSpan",
             "\\sustainOn",
             "\\sustainOff",
         ].sample
-    elsif r > 0.7
+    elsif r > 0.4
         "#{dir}\\markup{#{format(instruction)}}"
-    elsif rand > 0.2
+    else
         [
             "\\"+%w(ppppp pppp ppp pp p mp mf f ff fff ffff fffff fp sf sff sp spp sfz rfz).sample,
             "\\glissando",
             "\\stopTrillSpan",
         ].sample
-    else
-        ""
     end
 end
 
@@ -411,7 +414,7 @@ def maybe_arpeggio
 end
 
 def chord
-    max = (@gen[10, @count/300.0]+1.0)/2.0
+    max = (@gen[10, @count/100.0]+1.0)/2.0
     maybe_absolute+"<" + (1..rand(1..20*max)).map{pitch}.join(" ")+ ">"+maybe_arpeggio
 end
 
@@ -444,7 +447,11 @@ end
 def mark
     r = rand
     "\\mark " + if r > 0.6
-        "\"#{marktext}\" "
+        t = "bla"*100
+        while t.size > 20 do
+            t = marktext
+        end
+        "\"#{t}\" "
     elsif r > 0.2
         "\\default"
     else
@@ -477,14 +484,14 @@ def special_thing
         timesig,
         clefsig,
         keysig,
+        "\\set Score.repeatCommands = #'((volta \"#{rand(1..5)}\"))",
         "\\autoBeamOff",
-        #"\\stopStaff",
-        "    \\new Staff \\with {
+        "<< { #{(1..rand(5..20)).map{thing(true)}.join(" ")} } \\new Staff \\with {
           \\remove \"Time_signature_engraver\"
           alignAboveContext = #\"main\"
           \\magnifyStaff #2/3
           firstClef = ##f
-        } \\relative { #{clefsig} #{pitch}^\\markup{\\large{#{marktext}}} #{(1..rand(5..20)).map{thing}.join(" ")} \\stopStaff }"
+        } \\relative { #{clefsig} #{pitch}^\\markup{\\large{#{marktext}}} #{(1..rand(5..20)).map{thing(true)}.join(" ")} \\stopStaff } >>"
     ].sample
 end
 
@@ -495,6 +502,7 @@ def notsospecialthing
         "\\override Glissando.style = #'#{%w(line dashed-line dotted-line zigzag trill).sample}",
         "\\arpeggio" + %w(ArrowUp ArrowDown Normal Bracket Parenthesis ParenthesisDashed).sample,
         "\\set Score.markFormatter = #format-mark-#{["", "box-", "circle-"].sample}alphabet",
+        "\\set Score.repeatCommands = #'((volta #f))",
         "\\breathe",
         "\\autoBeamOn",
         #"\\startStaff",
@@ -507,16 +515,16 @@ def notsospecialthing
     ].sample
 end
 
-def thing
+def thing preventrecurse=false
     @count += 1
     r = rand
     if r > 0.85
         notsospecialthing
-    elsif r > 0.8
+    elsif r > 0.8 and not preventrecurse
         special_thing
     else
         r2 = (@gen[0, @count/300.0]+1.0)/2.0
-        if rand > r2 # 0.2
+        if rand > r2/1.5 # 0.2
             note
         else
             chord
@@ -684,9 +692,9 @@ puts "\\book {"
             puts "}"
 
             #puts "\\addlyrics {"
-
+            #
             #    puts "Lorem ip -- sum do -- lor sit a -- met, con -- se -- te -- tur a -- di -- pis -- cing e -- lit, sed di -- am no -- nu -- my eir -- mod tem -- por in -- vi -- dunt ut la -- bo -- re et do -- lo -- re ma -- gna a -- li -- quyam e -- rat, sed di -- am vo -- lup -- tu -- a. At ve -- ro e -- os et a -- ccu -- sam et jus -- to du -- o do -- lo -- res et ea re -- bum. Stet cli -- ta kasd gu -- ber -- gren, no se -- a ta -- ki -- ma -- ta sanc -- tus est."
-
+            #
             #puts "}"
 
         end
