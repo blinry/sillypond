@@ -1,6 +1,11 @@
 require "linguistics"
+require "perlin"
 
 Linguistics.use(:en)
+
+# persistence 1, 3 octaves
+@gen = Perlin::Generator.new Time.now.to_i % 100, 5, 3
+@count = 1
 
 class String
     def cap
@@ -84,7 +89,12 @@ end
 
 def duration
     #d = %w(2 4 4 4 4 8 8 8 8 16 16 16 16 32 32 32 32).sample
-    d = %w(2 4 4 8 8 8 8 16 16 32 32).sample
+    r = rand
+    d = if r > 0.5
+            "16"
+        else
+            %w(2 4 8 32).sample
+        end
     if rand > 0.9
         d+"."
     else
@@ -130,7 +140,6 @@ end
 
 def maybeinvbar
     if rand > 0.8
-        #"\\bar \"\""
         bar
     else
         ""
@@ -189,7 +198,6 @@ def instruction_addendum
         " ("+[
             "optional",
             "or don't",
-            "important",
             "if you feel like it",
             "maybe",
             "again",
@@ -250,7 +258,7 @@ end
 def when?
     [
         "",
-        "- or don't",
+        "– or don't",
         "here",
         "now",
         "...now!",
@@ -269,7 +277,7 @@ def instruction
                "#{active_verb} #{object}",
                "#{active_verb} #{object} #{when?}",
                "#{passive_verb} #{when?}",
-               "#{passive_verb}",
+               "#{["please", "make sure to", "", "", ""].sample} #{passive_verb}",
                "#{adjective}",
                "#{adjective} and #{adjective}",
            ].sample
@@ -403,7 +411,8 @@ def maybe_arpeggio
 end
 
 def chord
-    maybe_absolute+"<" + (1..rand(2..10)).map{pitch}.join(" ")+ ">"+maybe_arpeggio
+    max = (@gen[10, @count/300.0]+1.0)/2.0
+    maybe_absolute+"<" + (1..rand(1..20*max)).map{pitch}.join(" ")+ ">"+maybe_arpeggio
 end
 
 def marktext
@@ -423,6 +432,8 @@ def marktext
          "As #{adjective} as possible",
          "With #{object}",
          "Like #{rawobject.a}",
+         "On #{rawobject.a}",
+         "#{(%w(Very Slightly Extremely Moderately) << "").sample} #{adjective}",
          tempo
         ].sample
     else
@@ -466,7 +477,6 @@ def special_thing
         timesig,
         clefsig,
         keysig,
-        bar,
         "\\autoBeamOff",
         #"\\stopStaff",
         "    \\new Staff \\with {
@@ -498,13 +508,15 @@ def notsospecialthing
 end
 
 def thing
+    @count += 1
     r = rand
     if r > 0.85
         notsospecialthing
     elsif r > 0.8
         special_thing
     else
-        if rand > 0.2
+        r2 = (@gen[0, @count/300.0]+1.0)/2.0
+        if rand > r2 # 0.2
             note
         else
             chord
@@ -663,7 +675,7 @@ puts "\\book {"
                 puts timesig
                 print mark
 
-                150.times do
+                200.times do
                     print "#{thing} "
                 end
                 print "\\bar \"|.\""
@@ -697,5 +709,5 @@ puts "\\book {"
 puts "}"
 
 #20.times do
-#    puts "  "+instruction
+#    puts "  "+marktext
 #end
