@@ -1,5 +1,5 @@
 default:
-	#ruby lilyjunk.rb
-	ruby lilyjunk.rb > music.ly
+	#ruby sillypond.rb
+	ruby sillypond.rb > music.ly
 	lilypond music.ly
 	pkill -HUP mupdf
